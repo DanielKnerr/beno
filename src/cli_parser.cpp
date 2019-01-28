@@ -45,6 +45,14 @@ void parse_options(int arg_count, char **arg_vector, Options *options)
                     options->width = std::atoi(arg_vector[i + 1]);
                     options->height = std::atoi(arg_vector[i + 2]);
                 }
+                else if (command == "gpu")
+                {
+                    options->use_gpu = true;
+                }
+                else if (command == "cpu")
+                {
+                    options->use_gpu = false;
+                }
             }
             else
             {
@@ -101,6 +109,7 @@ Options defaultOptions()
     options.width = 400;
     options.height = 300;
     options.output = "output";
+    options.use_gpu = true;
 
     return options;
 }

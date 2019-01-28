@@ -1,13 +1,11 @@
-#include <iostream>
 #include <cuda.h>
 #include "kernel.hpp"
 #include <math.h>
 
-__global__ void calc(ComplexNumber *input, double *output, int *p_max_iterations, int *p_image_points)
+__global__ void normalized_iterations_count(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *p_max_iterations, unsigned int *p_image_points)
 {
     int max_iterations = *p_max_iterations;
     int image_points = *p_image_points;
-    int limit = 2; // refractor
 
     int id = id = blockIdx.x * blockDim.x + threadIdx.x;
     if (id < image_points)
@@ -16,7 +14,7 @@ __global__ void calc(ComplexNumber *input, double *output, int *p_max_iterations
         ComplexNumber z = {0.0, 0.0};
         for (int i = 0; i < max_iterations; i++)
         {
-            if ((z.a * z.a + z.b * z.b) > limit * limit)
+            if ((z.a * z.a + z.b * z.b) > *limit * *limit)
             {
                 // four more iterations to smooth it out
                 for (int j = 0; j < 4; j++)
@@ -45,32 +43,32 @@ __global__ void calc(ComplexNumber *input, double *output, int *p_max_iterations
     }
 }
 
-void startThreads(ComplexNumber *input, double *output, int *max_iterations, int *image_points)
+void startThreadsGPU(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations, unsigned int *image_points)
 {
     // Create device pointers
     ComplexNumber *d_input;
     double *d_output;
-    int *d_max_iterations, *d_image_points;
+    unsigned int *d_max_iterations, *d_image_points, *d_limit;
 
     // Calculate grid
     int threads = 256;
     int blocks = std::ceil(*image_points / threads);
 
-    std::cout << "Using " << blocks << " x " << threads << "  for " << *image_points << std::endl;
-
     // Allocate memory to the device pointers on the GPU
     cudaMalloc(&d_input, sizeof(ComplexNumber) * *image_points);
     cudaMalloc(&d_output, sizeof(double) * *image_points);
-    cudaMalloc(&d_max_iterations, sizeof(int));
-    cudaMalloc(&d_image_points, sizeof(int));
+    cudaMalloc(&d_max_iterations, sizeof(unsigned int));
+    cudaMalloc(&d_image_points, sizeof(unsigned int));
+    cudaMalloc(&d_limit, sizeof(unsigned int));
 
     // Copy data into the allocated memory
     cudaMemcpy(d_input, input, sizeof(ComplexNumber) * *image_points, cudaMemcpyHostToDevice);
-    cudaMemcpy(d_max_iterations, max_iterations, sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpy(d_image_points, image_points, sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_max_iterations, max_iterations, sizeof(unsigned int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_image_points, image_points, sizeof(unsigned int), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_limit, limit, sizeof(unsigned int), cudaMemcpyHostToDevice);
 
     // Execute kernel
-    calc<<<blocks, threads>>>(d_input, d_output, d_max_iterations, d_image_points);
+    normalized_iterations_count<<<blocks, threads>>>(d_input, d_output, d_limit, d_max_iterations, d_image_points);
 
     // Sync ??????????????????????????????
     cudaDeviceSynchronize();

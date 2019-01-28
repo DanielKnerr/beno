@@ -9,6 +9,8 @@ Aufgaben:
 - [ ] Zahlen mit beliebiger Genauigkeit nutzen.<sup>[1]</sup>
 - [ ] Das generierte Bild anzeigen und bei einem Mausklick die Koordinaten an dem geklickten Punkt ausgeben.<sup>[2]</sup>
 - [ ] GUI entwickeln.<sup>[2]</sup>
+- [ ] Den Argumentparser umschreiben, sodaß Argumente am Anfang registriert werden.
+- [ ] Scheduler für CPU Threads schreiben.
 
 <sup>[1]</sup> : [gpuprec](https://code.google.com/archive/p/gpuprec/) oder [CUMP](https://github.com/skystar0227/CUMP)  
 <sup>[2]</sup> : [SDL](http://www.libsdl.org/) oder [GLFW](https://www.glfw.org/)

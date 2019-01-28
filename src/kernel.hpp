@@ -7,5 +7,6 @@ struct ComplexNumber
     double b;
 };
 
-void startThreads(ComplexNumber *input, double *output, int *max_iterations, int *image_points);
+void startThreadsGPU(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations, unsigned int *image_points);
+void startThreadsCPU(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations, unsigned int *image_points);
 #endif

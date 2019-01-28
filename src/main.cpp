@@ -7,6 +7,7 @@
 #include <chrono>
 #include <vector>
 #include <gmpxx.h>
+#include <chrono>
 
 #include "palette_generator.cpp"
 #include "kernel.hpp"
@@ -55,19 +56,23 @@ int main(int argc, char **argv)
     Color palette[options.palette_resolution];
     linear_interpolation(palettePoints, points, palette, options.palette_resolution);
 
-    int numPixels = options.width * options.height;
+    unsigned int numPixels = options.width * options.height;
 
-    double offsetX = -0.75;
-    double offsetY = 0;
-    double radiusY = 1.5f;
+    // double offsetX = -0.75;
+    // double offsetY = 0;
+    // double radiusY = 1.5f;
+
+    double offsetX = -0.745428;
+    double offsetY = 0.113009;
+    double radiusY = 0.0001f;
 
     double aspect_ratio = (double)options.width / options.height;
 
     ComplexNumber *image_points_data = new ComplexNumber[numPixels];
 
-    for (uint y = 0; y < options.height; y++)
+    for (unsigned int y = 0; y < options.height; y++)
     {
-        for (uint x = 0; x < options.width; x++)
+        for (unsigned int x = 0; x < options.width; x++)
         {
             // scale
             double a = ((double)y / options.height) * (2 * radiusY);
@@ -86,8 +91,19 @@ int main(int argc, char **argv)
 
     double *output = new double[numPixels];
     png::image<png::rgb_pixel> image(options.width, options.height);
+    unsigned int limit = 2;
 
-    startThreads(image_points_data, output, &options.max_iterations, &numPixels);
+    auto t1 = std::chrono::high_resolution_clock::now();
+    if (options.use_gpu) {
+        printf("GPU: ");
+        startThreadsGPU(image_points_data, output, &limit, &options.max_iterations, &numPixels);
+    } else {
+        printf("CPU: ");
+        startThreadsCPU(image_points_data, output, &limit, &options.max_iterations, &numPixels);
+    }
+    auto t2 = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
+    printf("%fms\n", time_span.count() * 1000);
 
     std::vector<double> smooth_iterations_grid;
     smooth_iterations_grid.assign(output, output + numPixels);
@@ -95,9 +111,9 @@ int main(int argc, char **argv)
 
     std::sort(smooth_iterations_grid_sorted.begin(), smooth_iterations_grid_sorted.end());
 
-    for (uint y = 0; y < options.height; y++)
+    for (unsigned int y = 0; y < options.height; y++)
     {
-        for (uint x = 0; x < options.width; x++)
+        for (unsigned int x = 0; x < options.width; x++)
         {
             double col = smooth_iterations_grid[y * options.width + x];
 
@@ -110,12 +126,6 @@ int main(int argc, char **argv)
             image[y][x] = png::rgb_pixel(color.r, color.g, color.b);
         }
     }
-
-    std::cout << image_points_data[0].a << " : " << image_points_data[0].b << std::endl;
-    std::cout << output[0] << std::endl; // 2.00884
-
-    std::cout << image_points_data[1].a << " : " << image_points_data[1].b << std::endl;
-    std::cout << output[1] << std::endl; // 2.01306
 
     image.write(options.output + ".png");
 

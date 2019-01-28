@@ -4,10 +4,11 @@
 
 struct Options
 {
-    int max_iterations;
-    int palette_resolution;
+    unsigned int max_iterations;
+    unsigned int palette_resolution;
     int width, height;
     std::string output;
+    bool use_gpu;
 };
 
 Options defaultOptions();
