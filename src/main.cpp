@@ -60,11 +60,11 @@ int main(int argc, char **argv)
 
     // double offsetX = -0.75;
     // double offsetY = 0;
-    // double radiusY = 1.5f;
+    // double radiusY = 1.5;
 
     double offsetX = -0.745428;
     double offsetY = 0.113009;
-    double radiusY = 0.0001f;
+    double radiusY = 0.00001;
 
     double aspect_ratio = (double)options.width / options.height;
 
