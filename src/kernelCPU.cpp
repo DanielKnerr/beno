@@ -1,6 +1,8 @@
 #include <math.h>
 #include <mpfr.h>
 #include <stdio.h>
+#include <thread>
+
 #include "kernel.hpp"
 
 double normalized_iterations_count(double c_a, double c_b, unsigned int limit, unsigned int max_iterations) {
@@ -85,9 +87,31 @@ double normalized_iterations_count_mpf(double c_a_dbl, double c_b_dbl, unsigned 
     return 0.0;
 }
 
-void startThreadsCPU(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations, unsigned int *image_points) {
-    for (unsigned int i = 0; i < *image_points; i++) {
-        // output[i] = normalized_iterations_count(input[i].a, input[i].b, *limit, *max_iterations);
-        output[i] = normalized_iterations_count_mpf(input[i].a, input[i].b, *limit, *max_iterations);
+void startThreadBlock(int start, int end, ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations,
+                      unsigned int *image_points) {
+    for (unsigned int i = start; i < end && i < *image_points; i++) {
+        // for (unsigned int i = 0; i < *image_points; i++) {
+        output[i] = normalized_iterations_count(input[i].a, input[i].b, *limit, *max_iterations);
+        // output[i] = normalized_iterations_count_mpf(input[i].a, input[i].b, *limit, *max_iterations);
     }
+}
+
+void startThreadsCPU(ComplexNumber *input, double *output, unsigned int *limit, unsigned int *max_iterations, unsigned int *image_points) {
+    mpf_set_default_prec(32);
+    // for (unsigned int i = 0; i < *image_points; i++) {
+    //     // output[i] = normalized_iterations_count(input[i].a, input[i].b, *limit, *max_iterations);
+    //     output[i] = normalized_iterations_count_mpf(input[i].a, input[i].b, *limit, *max_iterations);
+    // }
+
+    const int numThreads = 8;
+    int pointsPerBlock = *image_points / numThreads;
+    std::thread *threads = new std::thread[numThreads];
+    for (int i = 0; i < numThreads; i++) {
+        threads[i] = std::thread(startThreadBlock, pointsPerBlock * i, pointsPerBlock * (i + 1), input, output, limit, max_iterations, image_points);
+    }
+
+    for (int i = 0; i < numThreads; i++) {
+        threads[i].join();
+    }
+    delete[] threads;
 }
