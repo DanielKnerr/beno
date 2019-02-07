@@ -1,115 +1,31 @@
 #include "cli_parser.hpp"
 
-#include <iostream> // TODO: DELETE
+#include <iostream>
 
-void parse_options(int arg_count, char **arg_vector, Options *options)
-{
-    // the first element is the command itself
-    for (int i = 1; i < arg_count; i++)
-    {
-        if (arg_vector[i][0] == '-')
-        {
-            std::string command = arg_vector[i];
+void initiliaze_arguments(Arguments* arguments) { arguments->config_file = ""; }
 
-            // TODO
-            // help page NOT ALL COMMANDS HAVE A SHORT VERSION
-            // increase i after processing arguments
+Arguments parse_arguments(int arg_count, char** arg_vector) {
+    Arguments arguments;
+    initiliaze_arguments(&arguments);
 
-            // remove the dash(es) at the beginning
-            if (arg_vector[i][1] == '-')
-            {
-                command = command.substr(2);
-                if (command == "output")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->output = std::string(arg_vector[i + 1]);
-                }
-
-                else if (command == "max-iterations")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->max_iterations = std::atoi(arg_vector[i + 1]);
-                }
-                else if (command == "p-resolution")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->palette_resolution = std::atoi(arg_vector[i + 1]);
-                }
-                else if (command == "size")
-                {
-                    if (arg_count <= i + 2)
-                        goto error;
-                    options->width = std::atoi(arg_vector[i + 1]);
-                    options->height = std::atoi(arg_vector[i + 2]);
-                }
-                else if (command == "gpu")
-                {
-                    options->use_gpu = true;
-                }
-                else if (command == "cpu")
-                {
-                    options->use_gpu = false;
-                }
-            }
-            else
-            {
-                command = command.substr(1);
-                if (command == "o")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->output = std::string(arg_vector[i + 1]);
-                }
-                else if (command == "i")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->max_iterations = std::atoi(arg_vector[i + 1]);
-                }
-                else if (command == "r")
-                {
-                    if (arg_count <= i + 1)
-                        goto error;
-                    options->palette_resolution = std::atoi(arg_vector[i + 1]);
-                }
-                else if (command == "s")
-                {
-                    if (arg_count <= i + 2)
-                        goto error;
-                    options->width = std::atoi(arg_vector[i + 1]);
-                    options->height = std::atoi(arg_vector[i + 2]);
-                }
+    for (int i = 1; i < arg_count; i++) {
+        std::string argument(arg_vector[i]);
+        
+        if (argument.at(0) == '-' && argument.at(1) == '-') {
+            int seperator = argument.find('=');
+            if (argument.substr(2, seperator - 2) == "config") {
+                arguments.config_file = argument.substr(seperator + 1);
             }
         }
     }
 
-    return;
-
-error:
-    std::cout << "ERRO" << std::endl;
+    return arguments;
 }
 
-void print_options(Options *options)
-{
-    std::cout << options->max_iterations << '\n'
-              << options->output << '\n'
-              << options->palette_resolution << '\n'
-              << options->width << '\n'
-              << options->height << '\n';
-}
+bool validate_arguments(Arguments* arguments) {
+    bool valid = false;
 
-Options defaultOptions()
-{
-    Options options;
-    options.max_iterations = 128;
-    options.palette_resolution = 256;
-    options.width = 400;
-    options.height = 300;
-    options.output = "output";
-    options.use_gpu = true;
+    if (arguments->config_file != "") valid = true;
 
-    return options;
+    return valid;
 }

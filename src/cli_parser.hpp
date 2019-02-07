@@ -2,16 +2,12 @@
 #define CLI_PARSER_HPP
 #include <string>
 
-struct Options
+struct Arguments
 {
-    unsigned int max_iterations;
-    unsigned int palette_resolution;
-    int width, height;
-    std::string output;
-    bool use_gpu;
+    std::string config_file;
 };
 
-Options defaultOptions();
-void parse_options(int arg_count, char **arg_vector, Options *options);
-void print_options(Options *options);
+Arguments parse_arguments(int arg_count, char **arg_vector);
+bool validate_arguments(Arguments* arguments);
+
 #endif

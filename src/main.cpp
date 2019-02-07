@@ -12,94 +12,64 @@
 #include "palette_generator.cpp"
 #include "kernel.hpp"
 #include "cli_parser.hpp"
-
-Options options = defaultOptions();
+#include "config_parser.hpp"
+#include "definitions.hpp"
 
 int main(int argc, char **argv)
 {
-    parse_options(argc, argv, &options);
-    print_options(&options);
+    Arguments arguments = parse_arguments(argc, argv);
+    if (!validate_arguments(&arguments)) {
+        std::cout << "Invalid arguments!\n";
+        throw std::exception();
+    }
+    Config config = get_default_config();
+    process_config_file(arguments.config_file, &config);
 
-    // Red
-    // PalettePoint palettePoints[] = {
-    //     PalettePoint{Color{0, 0, 0}, 0.0f},
-    //     PalettePoint{Color{150, 0, 0}, 0.8f},
-    //     PalettePoint{Color{200, 0, 0}, 0.95f},
-    //     PalettePoint{Color{255, 180, 0}, 1.0f}};
+    if (config.num_palette_points <= 0) {
+        std::cout << "Invalid palette!\n";
+        throw std::exception();
+    }
 
-    // Red (more yellow)
-    PalettePoint palettePoints[] = {
-        PalettePoint{Color{0, 0, 0}, 0.0f},
-        PalettePoint{Color{255, 0, 50}, 0.8f},
-        PalettePoint{Color{255, 210, 0}, 1.0f}
-    };
+    const int palette_res = 256;
+    Color palette[palette_res];
+    linear_interpolation(config.palette_points, config.num_palette_points - 1, palette, palette_res);
 
-    // Teal
-    // PalettePoint palettePoints[] = {
-    //     PalettePoint{Color{0, 0, 0}, 0.0f},
-    //     PalettePoint{Color{0, 20, 50}, 0.2f},
-    //     PalettePoint{Color{0, 20, 60}, 0.45f},
-    //     PalettePoint{Color{0, 100, 100}, 0.6f},
-    //     PalettePoint{Color{0, 255, 255}, 0.85f},
-    //     PalettePoint{Color{255, 255, 255}, 1.0f}
-    // };
+    unsigned int numPixels = config.image_width * config.image_height;
 
-    // White
-    // PalettePoint palettePoints[] = {
-    //     PalettePoint{Color{0, 0, 0}, 0.0f},
-    //     PalettePoint{Color{128,128, 128}, 0.75f},
-    //     PalettePoint{Color{255, 255, 255}, 1.0f}
-    // };
-
-    int points = (sizeof(palettePoints) / sizeof(PalettePoint)) - 1;
-
-    Color palette[options.palette_resolution];
-    linear_interpolation(palettePoints, points, palette, options.palette_resolution);
-
-    unsigned int numPixels = options.width * options.height;
-
-    // double offsetX = -0.75;
-    // double offsetY = 0;
-    // double radiusY = 1.5;
-
-    double offsetX = -0.745428;
-    double offsetY = 0.113009;
-    double radiusY = 0.00001;
-
-    double aspect_ratio = (double)options.width / options.height;
+    double aspect_ratio = (double)config.image_width / config.image_height;
 
     ComplexNumber *image_points_data = new ComplexNumber[numPixels];
 
-    for (unsigned int y = 0; y < options.height; y++)
+    for (unsigned int y = 0; y < config.image_height; y++)
     {
-        for (unsigned int x = 0; x < options.width; x++)
+        for (unsigned int x = 0; x < config.image_width; x++)
         {
             // scale
-            double a = ((double)y / options.height) * (2 * radiusY);
-            double b = ((double)x / options.width) * (2 * aspect_ratio * radiusY);
+            double a = ((double)y / config.image_height) * (2 * config.radius_y);
+            double b = ((double)x / config.image_width) * (2 * aspect_ratio * config.radius_y);
 
-            a -= radiusY;
-            b -= (aspect_ratio * radiusY);
+            a -= config.radius_y;
+            b -= (aspect_ratio * config.radius_y);
 
             // apply offset
-            b += offsetX;
-            a += offsetY;
+            b += config.center_x;
+            a += config.center_y;
 
-            image_points_data[y * options.width + x] = ComplexNumber{b, a};
+            image_points_data[y * config.image_width + x] = ComplexNumber{b, a};
         }
     }
 
     double *output = new double[numPixels];
-    png::image<png::rgb_pixel> image(options.width, options.height);
+    png::image<png::rgb_pixel> image(config.image_width, config.image_height);
     unsigned int limit = 2;
 
     auto t1 = std::chrono::high_resolution_clock::now();
-    if (options.use_gpu) {
+    if (false) {
         printf("GPU: ");
-        startThreadsGPU(image_points_data, output, &limit, &options.max_iterations, &numPixels);
+        startThreadsGPU(image_points_data, output, &limit, &config.max_iterations, &numPixels);
     } else {
         printf("CPU: ");
-        startThreadsCPU(image_points_data, output, &limit, &options.max_iterations, &numPixels);
+        startThreadsCPU(image_points_data, output, &limit, &config.max_iterations, &numPixels);
     }
     auto t2 = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(t2 - t1);
@@ -111,23 +81,23 @@ int main(int argc, char **argv)
 
     std::sort(smooth_iterations_grid_sorted.begin(), smooth_iterations_grid_sorted.end());
 
-    for (unsigned int y = 0; y < options.height; y++)
+    for (unsigned int y = 0; y < config.image_height; y++)
     {
-        for (unsigned int x = 0; x < options.width; x++)
+        for (unsigned int x = 0; x < config.image_width; x++)
         {
-            double col = smooth_iterations_grid[y * options.width + x];
+            double col = smooth_iterations_grid[y * config.image_width + x];
 
             auto lowerIter = std::lower_bound(smooth_iterations_grid_sorted.begin(), smooth_iterations_grid_sorted.end(), col);
             int idx = std::distance(smooth_iterations_grid_sorted.begin(), lowerIter);
 
             double hue = (double)idx / numPixels;
 
-            Color color = palette[(int)(hue * options.palette_resolution)];
+            Color color = palette[(int)(hue * palette_res)];
             image[y][x] = png::rgb_pixel(color.r, color.g, color.b);
         }
     }
 
-    image.write(options.output + ".png");
+    image.write("output.png");
 
     return 0;
 }
