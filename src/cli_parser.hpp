@@ -5,6 +5,7 @@
 struct Arguments
 {
     std::string config_file;
+    int x, y;
 };
 
 Arguments parse_arguments(int arg_count, char **arg_vector);

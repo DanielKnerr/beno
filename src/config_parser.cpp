@@ -17,13 +17,26 @@ void process_config_file(std::string file, Config* config) {
             } else if (kvp.key == "height") {
                 config->image_height = std::stoi(kvp.value);
             } else if (kvp.key == "center_x") {
-                config->center_x = std::stod(kvp.value);
+                config->center_x_double = std::stold(kvp.value);
+                mpf_set_str(config->center_x, kvp.value.c_str(), 10);
             } else if (kvp.key == "center_y") {
-                config->center_y = std::stod(kvp.value);
-            } else if (kvp.key == "radius_y") {
-                config->radius_y = std::stod(kvp.value);
+                config->center_y_double = std::stold(kvp.value);
+                mpf_set_str(config->center_y, kvp.value.c_str(), 10);
+            } else if (kvp.key == "height_y") {
+                config->height_y_double = std::stold(kvp.value);
+                mpf_set_str(config->height_y, kvp.value.c_str(), 10);
             } else if (kvp.key == "max_iterations") {
                 config->max_iterations = std::stoi(kvp.value);
+            } else if (kvp.key == "output_path") {
+                config->output_path = kvp.value;
+            } else if (kvp.key == "device") {
+                if (kvp.value == "cpu") {
+                    config->device = Device::CPU;
+                } else if (kvp.value == "cpu_mpf") {
+                    config->device = Device::CPU_MPF;
+                } else if (kvp.value == "gpu") {
+                    config->device = Device::GPU;
+                }
             } else if (kvp.key == "palette") {
                 int idx = -1;
                 std::vector<int> indexes;
@@ -89,12 +102,20 @@ Config get_default_config() {
     config.image_width = 400;
     config.max_iterations = 100;
 
-    config.center_x = -0.75;
-    config.center_y = 0;
-    config.radius_y = 1.5;
+    mpf_init_set_d(config.center_x, -0.75);
+    mpf_init_set_d(config.center_y, 0);
+    mpf_init_set_d(config.height_y, 1.5);
+
+    config.center_x_double = -0.75;
+    config.center_y_double = 0.0;
+    config.height_y_double = 1.5;
 
     config.num_palette_points = 0;
     config.palette_points = nullptr;
+
+    config.output_path = "output";
+    config.device = Device::CPU;
+    config.limit = 2;
 
     return config;
 }

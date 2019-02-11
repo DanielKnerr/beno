@@ -1,5 +1,6 @@
 #ifndef CONFIG_PARSER_HPP
 #define CONFIG_PARSER_HPP
+#include <gmpxx.h>
 #include <string>
 #include "definitions.hpp"
 
@@ -9,10 +10,14 @@ struct KeyValuePair {
 
 struct Config {
     unsigned int image_width, image_height, max_iterations;
-    double center_x, center_y, radius_y;
+    mpf_t center_x, center_y, height_y;
+    Number center_x_double, center_y_double, height_y_double;
 
     unsigned int num_palette_points;
     PalettePoint* palette_points;
+    std::string output_path;
+    Device device;
+    int limit;
 };
 
 KeyValuePair get_key_value_pair(std::string line);

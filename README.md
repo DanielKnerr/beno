@@ -10,6 +10,7 @@ Aufgaben:
 - [ ] Das generierte Bild anzeigen und bei einem Mausklick die Koordinaten an dem geklickten Punkt ausgeben.<sup>[1]</sup>
 - [ ] GUI entwickeln.<sup>[1]</sup>
 - [ ] Scheduler für CPU Threads schreiben.
+- [ ] Dauernd Status-Updates ausgeben, um diese im GUI anzeigen zu können.
 
 <sup>[1]</sup> : [SDL](http://www.libsdl.org/), [GLFW](https://www.glfw.org/) oder [JavaFX](https://openjfx.io/)
 
